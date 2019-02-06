@@ -23,7 +23,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.common.AccountPicker;
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -39,11 +38,12 @@ import com.google.api.services.vision.v1.VisionRequestInitializer;
 import com.google.api.services.vision.v1.model.AnnotateImageRequest;
 import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
 import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
+import com.google.api.services.vision.v1.model.ColorInfo;
+import com.google.api.services.vision.v1.model.DominantColorsAnnotation;
 import com.google.api.services.vision.v1.model.EntityAnnotation;
 import com.google.api.services.vision.v1.model.FaceAnnotation;
 import com.google.api.services.vision.v1.model.Feature;
 import com.google.api.services.vision.v1.model.Image;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -81,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
     private void launchImagePicker() {
         Intent intent = new Intent();
        intent.setType("image/*");
@@ -89,7 +88,6 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(Intent.createChooser(intent, "Select an image"),
                 REQUEST_GALLERY_IMAGE);
     }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
@@ -157,7 +155,14 @@ public class MainActivity extends AppCompatActivity {
                      facesDetection.setMaxResults(5);
                     featureList.add(facesDetection);
 
-                    List<AnnotateImageRequest> imageList = new ArrayList<>();
+                     Feature colorDetection = new Feature();
+                     colorDetection.setType("IMAGE_PROPERTIES");
+                     colorDetection.setMaxResults(1);
+                     featureList.add(colorDetection);
+
+
+
+                     List<AnnotateImageRequest> imageList = new ArrayList<>();
                     AnnotateImageRequest annotateImageRequest = new AnnotateImageRequest();
                     Image base64EncodedImage = getBase64EncodedJpeg(bitmap);
                     annotateImageRequest.setImage(base64EncodedImage);
@@ -234,11 +239,23 @@ public class MainActivity extends AppCompatActivity {
             message.append("nothing\n");
         }
 
+
+        message.append("COLORS:\n");
+
+        DominantColorsAnnotation colors  = response.getResponses().get(0).getImagePropertiesAnnotation().getDominantColors();
+        for (ColorInfo color : colors.getColors()) {
+            message.append(
+                    // color.getPixelFraction()+
+                    //    color.getColor().getRed()+ "GREEN"+
+                    // color.getColor().getGreen()+ "BLUE"+
+                    //  color.getColor().getBlue());
+                    "" + color.getPixelFraction() + " - " + color.getColor() +"\n");
+        }
+
+
         return message.toString();
     }
-
     public Bitmap resizeBitmap(Bitmap bitmap) {
-
         int maxDimension = 1024;
         int originalWidth = bitmap.getWidth();
         int originalHeight = bitmap.getHeight();
@@ -255,9 +272,7 @@ public class MainActivity extends AppCompatActivity {
             resizedHeight = maxDimension;
             resizedWidth = maxDimension;
         }
-        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false);
-    }
-
+        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false); }
     public Image getBase64EncodedJpeg(Bitmap bitmap) {
         Image image = new Image();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
