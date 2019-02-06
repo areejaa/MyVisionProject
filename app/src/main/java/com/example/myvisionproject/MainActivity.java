@@ -109,33 +109,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_GALLERY_IMAGE && resultCode == RESULT_OK && data != null) {
-            uploadImage(data.getData());
-        } /*else if (requestCode == REQUEST_CODE_PICK_ACCOUNT) {
-            if (resultCode == RESULT_OK) {
-                String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-                AccountManager am = AccountManager.get(this);
-                Account[] accounts = am.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
-                for (Account account : accounts) {
-                    if (account.name.equals(email)) {
-                        mAccount = account;
-                        break;
-                    }
-                }
-               getAuthToken();}
-             else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "No Account Selected", Toast.LENGTH_SHORT)
-                        .show();
-            }
-        } else if (requestCode == REQUEST_ACCOUNT_AUTHORIZATION) {
-            if (resultCode == RESULT_OK) {
-                Bundle extra = data.getExtras();
-                //onTokenReceived(extra.getString("authtoken"));
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Authorization Failed", Toast.LENGTH_SHORT)
-                        .show();
-            }
-        }*/
-    }
+            uploadImage(data.getData()); } }
 
     public void uploadImage(Uri uri) {
         if (uri != null) {
@@ -160,16 +134,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected String doInBackground(Object... params) {
 
-                    /*GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
-                    HttpTransport httpTransport = AndroidHttp.newCompatibleTransport();
-                    JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-
-                    Vision.Builder builder = new Vision.Builder
-                            (httpTransport, jsonFactory, credential);
-                    Vision vision = builder.build();*/
-                    //1ef6721dac713036f0e9fd1bab70ca64765b7a63
-                    //AIzaSyDLua6V3baDH01P6O5paJm_b48AZB27_6U
-                //AIzaSyB7O3vQ1cNtJ_NAeVPW7S08OtzD6wiOWzk (key2 fatimah)
                  try {
                      Vision.Builder visionBuilder = new Vision.Builder(new NetHttpTransport(),
                              new AndroidJsonFactory(), null);
@@ -180,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                     List<Feature> featureList = new ArrayList<>();
                     Feature labelDetection = new Feature();
                     labelDetection.setType("LABEL_DETECTION");
-                    labelDetection.setMaxResults(10);
+                    labelDetection.setMaxResults(2);
                     featureList.add(labelDetection);
 
                     Feature textDetection = new Feature();
@@ -190,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
 
                     Feature facesDetection = new Feature();
                     facesDetection.setType("FACE_DETECTION");
-                     facesDetection.setMaxResults(10);
+                     facesDetection.setMaxResults(5);
                     featureList.add(facesDetection);
 
                     List<AnnotateImageRequest> imageList = new ArrayList<>();
@@ -234,14 +198,14 @@ public class MainActivity extends AppCompatActivity {
         message.append("Labels:\n");
         List<EntityAnnotation> labels = response.getResponses().get(0).getLabelAnnotations();
         if (labels != null) {
-            for (EntityAnnotation label : labels) {
+            for (EntityAnnotation label : labels){
                 message.append(String.format(Locale.getDefault(), "%.3f: %s",
                         label.getScore(), label.getDescription()));
-              message.append("\n");
+              message.append(" ");
             }
+            message.append("\n");
         } else {
-            message.append("nothing\n");
-        }
+            message.append("nothing\n"); }
 
         message.append("Texts:\n");
         List<EntityAnnotation> texts = response.getResponses().get(0)
@@ -265,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
                         +"\n"+"Anger:"+face.getAngerLikelihood()+"\n"+"Surprise: "+face.getSurpriseLikelihood()));
                 message.append("\n");
             }
+
         } else {
             message.append("nothing\n");
         }
@@ -301,108 +266,4 @@ public class MainActivity extends AppCompatActivity {
         image.encodeContent(imageBytes);
         return image;
     }
-
-  /*  private void pickUserAccount() {
-        String[] accountTypes = new String[]{GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE};
-        Intent intent = AccountPicker.newChooseAccountIntent(null, null,
-                accountTypes, false, null, null, null, null);
-        startActivityForResult(intent, REQUEST_CODE_PICK_ACCOUNT);
-    }
-
-    private void getAuthToken() {
-        String SCOPE = "oauth2:https://www.googleapis.com/auth/cloud-platform";
-        if (mAccount == null) {
-            pickUserAccount();
-        } else {
-            new GetTokenClass(MainActivity.this, mAccount, SCOPE, REQUEST_ACCOUNT_AUTHORIZATION)
-                    .execute();
-        }
-    }
-
-    public void onTokenReceived(String token){
-        accessToken = token;
-        launchImagePicker();
-    }*/
 }//end class
-
-/*import android.annotation.SuppressLint;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.services.vision.v1.Vision;
-import com.google.api.services.vision.v1.VisionRequestInitializer;
-import com.google.api.services.vision.v1.model.AnnotateImageRequest;
-import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
-import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
-import com.google.api.services.vision.v1.model.FaceAnnotation;
-import com.google.api.services.vision.v1.model.Feature;
-import com.google.api.services.vision.v1.model.Image;
-import com.google.api.services.vision.v1.model.TextAnnotation;
-import org.apache.commons.io.IOUtils;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.List;
-public class MainActivity extends AppCompatActivity {
-    private  String TAG = "";
-    TextView txt;
-    @Override
-    protected void onCreate(Bundle savedInstanceState){
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        ImageView image= (ImageView)findViewById(R.id.selected_image);
-        int imageresource = getResources().getIdentifier("@drawable/letterphoto",null,this.getPackageName());
-     image.setImageResource(imageresource);
-       txt =(TextView) findViewById(R.id.selected_image_txt) ;
-      Button btn = (Button) findViewById(R.id.select_image_button);
-        Vision.Builder visionBuilder = new Vision.Builder(
-                new NetHttpTransport(),
-                new AndroidJsonFactory(),
-                null);
-        visionBuilder.setVisionRequestInitializer(
-                new VisionRequestInitializer("1ef6721dac713036f0e9fd1bab70ca64765b7a63"));
-        final Vision vision = visionBuilder.build();
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                // Convert photo to byte array
-                @SuppressLint("ResourceType") InputStream inputStream =
-                        getResources().openRawResource(R.drawable.photo11);
-                try {
-                    byte[] photoData = IOUtils.toByteArray(inputStream);
-                    Image inputImage = new Image();
-                    inputImage.encodeContent(photoData);
-                    Feature desiredFeature = new Feature();
-                    desiredFeature.setType("TEXT_DETECTION");
-                    AnnotateImageRequest request = new AnnotateImageRequest();
-                    request.setImage(inputImage);
-                    request.setFeatures(Arrays.asList(desiredFeature));
-                    BatchAnnotateImagesRequest batchRequest =
-                            new BatchAnnotateImagesRequest();
-                    batchRequest.setRequests(Arrays.asList(request));
-                    BatchAnnotateImagesResponse batchResponse =
-                            vision.images().annotate(batchRequest).execute();
-                    TextAnnotation text = batchResponse.getResponses()
-                            .get(0).getFullTextAnnotation();
-                    Toast.makeText(getApplicationContext(),
-                            text.getText(), Toast.LENGTH_LONG).show();
-                    txt.setText("hi");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                // More code here
-            }
-        });
-    } //end onCreate
-}//end class*/
