@@ -40,6 +40,7 @@ import com.google.api.services.vision.v1.model.AnnotateImageRequest;
 import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
 import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
 import com.google.api.services.vision.v1.model.EntityAnnotation;
+import com.google.api.services.vision.v1.model.FaceAnnotation;
 import com.google.api.services.vision.v1.model.Feature;
 import com.google.api.services.vision.v1.model.Image;
 
@@ -255,13 +256,13 @@ public class MainActivity extends AppCompatActivity {
             message.append("nothing\n");
         }
 
-        message.append("Landmarks:\n");
-        List<EntityAnnotation> landmarks = response.getResponses().get(0)
-                .getLandmarkAnnotations();
-        if (landmarks != null) {
-            for (EntityAnnotation landmark : landmarks) {
-                message.append(String.format(Locale.getDefault(), "%.3f: %s",
-                        landmark.getScore(), landmark.getDescription()));
+        message.append("Faces:\n");
+        List<FaceAnnotation> faces = response.getResponses().get(0)
+                .getFaceAnnotations();
+        if (faces != null) {
+            for (FaceAnnotation face: faces) {
+                message.append(String.format("Joy:"+face.getJoyLikelihood()+"\n"+"Sorrow:"+face.getSorrowLikelihood()
+                        +"\n"+"Anger:"+face.getAngerLikelihood()+"\n"+"Surprise: "+face.getSurpriseLikelihood()));
                 message.append("\n");
             }
         } else {
