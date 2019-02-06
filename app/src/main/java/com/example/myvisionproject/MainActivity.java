@@ -168,12 +168,13 @@ public class MainActivity extends AppCompatActivity {
                     Vision vision = builder.build();*/
                     //1ef6721dac713036f0e9fd1bab70ca64765b7a63
                     //AIzaSyDLua6V3baDH01P6O5paJm_b48AZB27_6U
+                //AIzaSyB7O3vQ1cNtJ_NAeVPW7S08OtzD6wiOWzk (key2 fatimah)
                  try {
-                Vision.Builder visionBuilder = new Vision.Builder(new NetHttpTransport(),
-                        new AndroidJsonFactory(), null);
-                visionBuilder.setVisionRequestInitializer( new VisionRequestInitializer(
-                        "1ef6721dac713036f0e9fd1bab70ca64765b7a63"));
-                Vision vision = visionBuilder.build();
+                     Vision.Builder visionBuilder = new Vision.Builder(new NetHttpTransport(),
+                             new AndroidJsonFactory(), null);
+                     visionBuilder.setVisionRequestInitializer( new VisionRequestInitializer(
+                             "AIzaSyB7O3vQ1cNtJ_NAeVPW7S08OtzD6wiOWzk"));
+                     Vision vision = visionBuilder.build();
 
                     List<Feature> featureList = new ArrayList<>();
                     Feature labelDetection = new Feature();
@@ -186,10 +187,10 @@ public class MainActivity extends AppCompatActivity {
                     textDetection.setMaxResults(10);
                     featureList.add(textDetection);
 
-                    Feature landmarkDetection = new Feature();
-                    landmarkDetection.setType("LANDMARK_DETECTION");
-                    landmarkDetection.setMaxResults(10);
-                    featureList.add(landmarkDetection);
+                    Feature facesDetection = new Feature();
+                    facesDetection.setType("FACE_DETECTION");
+                     facesDetection.setMaxResults(10);
+                    featureList.add(facesDetection);
 
                     List<AnnotateImageRequest> imageList = new ArrayList<>();
                     AnnotateImageRequest annotateImageRequest = new AnnotateImageRequest();
@@ -210,7 +211,6 @@ public class MainActivity extends AppCompatActivity {
 
                     BatchAnnotateImagesResponse response = annotateRequest.execute();
                     return convertResponseToString(response);
-
                 }
 
                 catch (GoogleJsonResponseException e) {
@@ -236,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
             for (EntityAnnotation label : labels) {
                 message.append(String.format(Locale.getDefault(), "%.3f: %s",
                         label.getScore(), label.getDescription()));
-                message.append("\n");
+              message.append("\n");
             }
         } else {
             message.append("nothing\n");
