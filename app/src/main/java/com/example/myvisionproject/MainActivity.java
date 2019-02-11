@@ -61,7 +61,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView resultTextView;
     private ImageView selectedImage;
     Account mAccount;
-
+    //"paper","number;
+   private String [] excludeTextLabels = {"text","line","font","calligraphy","word","clip art","handwriting","witting","document","number"};
+   private String[] receivedLabels = new String[5] ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -142,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                     List<Feature> featureList = new ArrayList<>();
                     Feature labelDetection = new Feature();
                     labelDetection.setType("LABEL_DETECTION");
-                    labelDetection.setMaxResults(2);
+                    labelDetection.setMaxResults(5);
                     featureList.add(labelDetection);
 
                     Feature textDetection = new Feature();
@@ -203,12 +205,16 @@ public class MainActivity extends AppCompatActivity {
         message.append("Labels:\n");
         List<EntityAnnotation> labels = response.getResponses().get(0).getLabelAnnotations();
         if (labels != null) {
+            //this loop will add all labels received from vision API to receivedLabels array
+            int i=0;
             for (EntityAnnotation label : labels){
-                message.append(String.format(Locale.getDefault(), "%.3f: %s",
-                        label.getScore(), label.getDescription()));
-              message.append(" ");
+                receivedLabels[i]=(String.format( label.getDescription()));
+                i++;
             }
+            //send receivedLabels to getLabel method that will exclude some labels inorder to get accurate result
+            message.append(getLabel(receivedLabels));
             message.append("\n");
+
         } else {
             message.append("nothing\n"); }
 
@@ -281,4 +287,21 @@ public class MainActivity extends AppCompatActivity {
         image.encodeContent(imageBytes);
         return image;
     }
+
+    public String getLabel(String []labels){
+        String label="";
+       for (int i=0;i<labels.length;i++) {
+          label= label+labels[i].toLowerCase();
+           for (int k = 0; k < excludeTextLabels.length; k++) {
+               if (label.equals(excludeTextLabels[k])) {
+                   label="Written Text:";
+                  return label; }
+               /* else{
+                if(label.equals("furniture")){
+                 break;}// end if
+               }//end else*/
+           }// end for exclude
+       }// end for labels
+        return label;
+        }//end method getLabels
 }//end class
