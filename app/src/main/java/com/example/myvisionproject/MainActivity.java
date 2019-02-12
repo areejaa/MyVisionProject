@@ -1,7 +1,7 @@
 package com.example.myvisionproject;
 
 
-import android.Manifest;
+/*import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
@@ -48,6 +48,48 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;*/
+
+//new
+import android.Manifest;
+import android.accounts.Account;
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.api.client.extensions.android.json.AndroidJsonFactory;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.services.vision.v1.Vision;
+import com.google.api.services.vision.v1.VisionRequestInitializer;
+import com.google.api.services.vision.v1.model.AnnotateImageRequest;
+import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
+import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
+import com.google.api.services.vision.v1.model.ColorInfo;
+import com.google.api.services.vision.v1.model.DominantColorsAnnotation;
+import com.google.api.services.vision.v1.model.EntityAnnotation;
+import com.google.api.services.vision.v1.model.FaceAnnotation;
+import com.google.api.services.vision.v1.model.Feature;
+import com.google.api.services.vision.v1.model.Image;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 
@@ -60,6 +102,40 @@ public class MainActivity extends AppCompatActivity {
     private final String LOG_TAG = "MainActivity";
     private TextView resultTextView;
     private ImageView selectedImage;
+    private static ArrayList<ColorName> initColorList() {
+        ArrayList<ColorName> colorList = new ArrayList<ColorName>();
+
+        colorList.add(new ColorName("Black", 0x00, 0x00, 0x00));/////
+        colorList.add(new ColorName("Blue", 0x00, 0x00, 0xFF));///
+        colorList.add(new ColorName("Brown", 0xA5, 0x2A, 0x2A));///
+        colorList.add(new ColorName("DarkBlue", 0x00, 0x00, 0x8B));//
+        colorList.add(new ColorName("DarkGray", 0xA9, 0xA9, 0xA9));///
+        colorList.add(new ColorName("DarkGreen", 0x00, 0x64, 0x00));//
+        colorList.add(new ColorName("DarkOrange", 0xFF, 0x8C, 0x00));//
+        colorList.add(new ColorName("DarkRed", 0x8B, 0x00, 0x00));//
+        colorList.add(new ColorName("Gold", 0xFF, 0xD7, 0x00));///
+        colorList.add(new ColorName("Gray", 0x80, 0x80, 0x80));///
+        colorList.add(new ColorName("Green", 0x00, 0x80, 0x00));///
+        colorList.add(new ColorName("GreenYellow", 0xAD, 0xFF, 0x2F));///
+        colorList.add(new ColorName("Ivory", 0xFF, 0xFF, 0xF0));////
+        colorList.add(new ColorName("LightBlue", 0xAD, 0xD8, 0xE6));///
+        colorList.add(new ColorName("LightGray", 0xD3, 0xD3, 0xD3));//
+        colorList.add(new ColorName("LightGreen", 0x90, 0xEE, 0x90));//
+        colorList.add(new ColorName("LightYellow", 0xFF, 0xFF, 0xE0));//
+        colorList.add(new ColorName("Maroon", 0x80, 0x00, 0x00));///
+        colorList.add(new ColorName("Navy", 0x00, 0x00, 0x80));//
+        colorList.add(new ColorName("Orange", 0xFF, 0xA5, 0x00));//
+        colorList.add(new ColorName("OrangeRed", 0xFF, 0x45, 0x00));//
+        colorList.add(new ColorName("Pink", 0xFF, 0xC0, 0xCB));///
+        colorList.add(new ColorName("Purple", 0x80, 0x00, 0x80));///
+        colorList.add(new ColorName("Red", 0xFF, 0x00, 0x00));///
+        colorList.add(new ColorName("Silver", 0xC0, 0xC0, 0xC0));///
+        colorList.add(new ColorName("Violet", 0xEE, 0x82, 0xEE));///
+        colorList.add(new ColorName("White", 0xFF, 0xFF, 0xFF));///
+        colorList.add(new ColorName("Yellow", 0xFF, 0xFF, 0x00));///
+
+        return colorList;
+    }
     Account mAccount;
     //"paper","number;
    private String [] excludeTextLabels = {"text","line","font","calligraphy","word","clip art","handwriting","witting","document","number"};
@@ -231,14 +307,32 @@ public class MainActivity extends AppCompatActivity {
             message.append("nothing\n");
         }
 
+        ///////FACE START
         message.append("Faces:\n");
+        String person = "";
+        int numberofpersons=0;
         List<FaceAnnotation> faces = response.getResponses().get(0)
                 .getFaceAnnotations();
         if (faces != null) {
             for (FaceAnnotation face: faces) {
-                message.append(String.format("Joy:"+face.getJoyLikelihood()+"\n"+"Sorrow:"+face.getSorrowLikelihood()
-                        +"\n"+"Anger:"+face.getAngerLikelihood()+"\n"+"Surprise: "+face.getSurpriseLikelihood()));
-                message.append("\n");
+                numberofpersons++;
+
+                String joy=  String.format(face.getJoyLikelihood());
+                if (joy.equals("VERY_LIKELY")||joy.equals("LIKELY")||joy.equals("POSSIBLE"))
+                    person="a happy person";
+                String sorrow=  String.format(face.getSorrowLikelihood());
+                if (sorrow.equals("VERY_LIKELY")||sorrow.equals("LIKELY")||sorrow.equals("POSSIBLE"))
+                    person="a sad person";
+                String anger =String.format(face.getAngerLikelihood());
+                if (anger.equals("VERY_LIKELY")||anger.equals("LIKELY")||anger.equals("POSSIBLE"))
+                    person="a sad person";
+                String surprise =String.format(face.getSurpriseLikelihood());
+                if (surprise.equals("VERY_LIKELY")||surprise.equals("LIKELY")||surprise.equals("POSSIBLE"))
+                    person="a surprised person";
+                if (numberofpersons > 1 )
+                    message.append(" and \n"+person);
+                else message.append(person);
+
             }
 
         } else {
@@ -246,19 +340,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        message.append("COLORS:\n");
 
+        message.append("COLORS:\n");
         DominantColorsAnnotation colors  = response.getResponses().get(0).getImagePropertiesAnnotation().getDominantColors();
         for (ColorInfo color : colors.getColors()) {
             message.append(
-                    // color.getPixelFraction()+
-                    //    color.getColor().getRed()+ "GREEN"+
-                    // color.getColor().getGreen()+ "BLUE"+
-                    //  color.getColor().getBlue());
-                    "" + color.getPixelFraction() + " - " + color.getColor() +"\n");
+                    message.append(
+                            // color.getPixelFraction()+
+                            //    color.getColor().getRed()+ "GREEN"+
+                            // color.getColor().getGreen()+ "BLUE"+
+                            //  color.getColor().getBlue());
+                            "" + /*color.getPixelFraction() + " - " + */getColorNameFromRgb((int)Math.round(color.getColor().getRed()),(int)Math.round(color.getColor().getGreen()),(int)Math.round(color.getColor().getBlue())) +"\n"));
         }
-
-
         return message.toString();
     }
     public Bitmap resizeBitmap(Bitmap bitmap) {
@@ -290,18 +383,78 @@ public class MainActivity extends AppCompatActivity {
 
     public String getLabel(String []labels){
         String label="";
-       for (int i=0;i<labels.length;i++) {
-          label= label+labels[i].toLowerCase();
-           for (int k = 0; k < excludeTextLabels.length; k++) {
-               if (label.equals(excludeTextLabels[k])) {
-                   label="Written Text:";
-                  return label; }
+        for (int i=0;i<labels.length;i++) {
+            label= label+labels[i].toLowerCase();
+            for (int k = 0; k < excludeTextLabels.length; k++) {
+                if (label.equals(excludeTextLabels[k])) {
+                    label="Written Text:";
+                    return label; }
                /* else{
                 if(label.equals("furniture")){
                  break;}// end if
                }//end else*/
-           }// end for exclude
-       }// end for labels
+            }// end for exclude
+        }// end for labels
         return label;
-        }//end method getLabels
+    }//end method getLabels
+    public static String getColorNameFromRgb(int r, int g, int b) {
+        ArrayList<ColorName> colorList = initColorList();
+        ColorName closestMatch = null;
+        int minMSE = Integer.MAX_VALUE;
+        int mse;
+        for (ColorName c : colorList) {
+            mse = c.computeMSE(r, g, b);
+            if (mse < minMSE) {
+                minMSE = mse;
+                closestMatch = c;
+            }
+        }
+
+        if (closestMatch != null) {
+            return closestMatch.getName();
+        } else {
+            return "No matched color name.";
+        }
+    }// end getcolor
+    public static String getColorNameFromHex(int hexColor) {
+        int r = (hexColor & 0xFF0000) >> 16;
+        int g = (hexColor & 0xFF00) >> 8;
+        int b = (hexColor & 0xFF);
+        return getColorNameFromRgb(r, g, b);
+    }// end getcolorhex
+
 }//end class
+class ColorName {
+    public int r, g, b;
+    public String name;
+
+    public ColorName(String name, int r, int g, int b) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.name = name;
+    }
+
+    public int computeMSE(int pixR, int pixG, int pixB) {
+        return (int) (((pixR - r) * (pixR - r) + (pixG - g) * (pixG - g) + (pixB - b)
+                * (pixB - b)) / 3);
+    }
+
+    public int getR() {
+        return r;
+    }
+
+    public int getG() {
+        return g;
+    }
+
+    public int getB() {
+        return b;
+    }
+
+    public String getName() {
+        return name;
+    }
+}// end class color
+
+
