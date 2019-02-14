@@ -52,7 +52,6 @@ import java.util.Locale;*/
 
 //new
 import android.Manifest;
-import android.accounts.Account;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -94,17 +93,15 @@ import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static String accessToken;
+    int trackcloud =0 ;
+    //needed attributes
     static final int REQUEST_GALLERY_IMAGE = 10;
-    static final int REQUEST_CODE_PICK_ACCOUNT = 11;
-    static final int REQUEST_ACCOUNT_AUTHORIZATION = 12;
     static final int REQUEST_PERMISSIONS = 13;
     private final String LOG_TAG = "MainActivity";
     private TextView resultTextView;
     private ImageView selectedImage;
     private static ArrayList<ColorName> initColorList() {
         ArrayList<ColorName> colorList = new ArrayList<ColorName>();
-
         colorList.add(new ColorName("Black", 0x00, 0x00, 0x00));/////
         colorList.add(new ColorName("Blue", 0x00, 0x00, 0xFF));///
         colorList.add(new ColorName("Brown", 0xA5, 0x2A, 0x2A));///
@@ -133,32 +130,23 @@ public class MainActivity extends AppCompatActivity {
         colorList.add(new ColorName("Violet", 0xEE, 0x82, 0xEE));///
         colorList.add(new ColorName("White", 0xFF, 0xFF, 0xFF));///
         colorList.add(new ColorName("Yellow", 0xFF, 0xFF, 0x00));///
-
-        return colorList;
-    }
-    Account mAccount;
-    //"paper","number;
+        return colorList; }
+    //"paper"
    private String [] excludeTextLabels = {"text","line","font","calligraphy","word","clip art","handwriting","witting","document","number"};
    private String[] receivedLabels = new String[5] ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button selectImageButton = (Button) findViewById(R.id
-                .select_image_button);
+        Button selectImageButton = (Button) findViewById(R.id.select_image_button);
         selectedImage = (ImageView) findViewById(R.id.selected_image);
         resultTextView = (TextView) findViewById(R.id.result);
-
         selectImageButton.setOnClickListener(new View.OnClickListener() {
-
             @Override
-            public void onClick(View v) {
-                ActivityCompat.requestPermissions(MainActivity.this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        REQUEST_PERMISSIONS);
-            }
-        });
-    }
+            public void onClick(View v) { ActivityCompat.requestPermissions
+                    (MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        REQUEST_PERMISSIONS); }}); }
+
     private void launchImagePicker() {
         Intent intent = new Intent();
        intent.setType("image/*");
@@ -173,7 +161,6 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQUEST_PERMISSIONS:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //getAuthToken();
                     launchImagePicker();
                 } else {
                     Toast.makeText(MainActivity.this, "Permission Denied!", Toast.LENGTH_SHORT).show();
@@ -188,12 +175,13 @@ public class MainActivity extends AppCompatActivity {
             uploadImage(data.getData()); } }
 
     public void uploadImage(Uri uri) {
+
         if (uri != null) {
             try {
                 Bitmap bitmap = resizeBitmap(
                         MediaStore.Images.Media.getBitmap(getContentResolver(), uri));
-                callCloudVision(bitmap);
                 selectedImage.setImageBitmap(bitmap);
+                callCloudVision(bitmap);
             } catch (IOException e) {
                 Log.e(LOG_TAG, e.getMessage());
             }
@@ -207,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
         resultTextView.setText("Retrieving results from cloud");
 
         new AsyncTask<Object, Void, String>() {
-            @Override
+        @Override
             protected String doInBackground(Object... params) {
 
                  try {
@@ -237,8 +225,6 @@ public class MainActivity extends AppCompatActivity {
                      colorDetection.setType("IMAGE_PROPERTIES");
                      colorDetection.setMaxResults(1);
                      featureList.add(colorDetection);
-
-
 
                      List<AnnotateImageRequest> imageList = new ArrayList<>();
                     AnnotateImageRequest annotateImageRequest = new AnnotateImageRequest();
@@ -271,28 +257,16 @@ public class MainActivity extends AppCompatActivity {
             }
 
             protected void onPostExecute(String result) {
-                resultTextView.setText(result);
+
+                resultTextView.setText(result+"\n");
+                trackcloud++;
             }
-        }.execute();
-    }
+       }.execute();
+         }//end callcloudvision
 
     private String convertResponseToString(BatchAnnotateImagesResponse response) {
         StringBuilder message = new StringBuilder("Results:\n\n");
-        message.append("Labels:\n");
-        List<EntityAnnotation> labels = response.getResponses().get(0).getLabelAnnotations();
-        if (labels != null) {
-            //this loop will add all labels received from vision API to receivedLabels array
-            int i=0;
-            for (EntityAnnotation label : labels){
-                receivedLabels[i]=(String.format( label.getDescription()));
-                i++;
-            }
-            //send receivedLabels to getLabel method that will exclude some labels inorder to get accurate result
-            message.append(getLabel(receivedLabels));
-            message.append("\n");
 
-        } else {
-            message.append("nothing\n"); }
 
         message.append("Texts:\n");
         List<EntityAnnotation> texts = response.getResponses().get(0)
@@ -301,8 +275,7 @@ public class MainActivity extends AppCompatActivity {
             for (EntityAnnotation text : texts) {
                 message.append(String.format(Locale.getDefault(), "%s: %s",
                         text.getLocale(), text.getDescription()));
-                message.append("\n");
-            }
+                message.append("\n");}
         } else {
             message.append("nothing\n");
         }
@@ -332,28 +305,36 @@ public class MainActivity extends AppCompatActivity {
                 if (numberofpersons > 1 )
                     message.append(" and \n"+person);
                 else message.append(person);
-
             }
-
+            message.append("\n");
         } else {
             message.append("nothing\n");
         }
+        message.append("Labels:\n");
+        List<EntityAnnotation> labels = response.getResponses().get(0).getLabelAnnotations();
+        if (labels != null) {
+            //this loop will add all labels received from vision API to receivedLabels array
+            int i=0;
+            for (EntityAnnotation label : labels){
+                receivedLabels[i]=(String.format( label.getDescription()));
+                i++; }
+            //send receivedLabels to getLabel method that will exclude some labels inorder to get accurate result
+            if(faces==null)
+            { message.append(getLabel(receivedLabels));}
+            message.append("\n");
+        } else {
+            message.append("nothing\n"); }
 
 
-
-        message.append("COLORS:\n");
+        //colors
+        message.append("\n"+"COLORS:\n");
         DominantColorsAnnotation colors  = response.getResponses().get(0).getImagePropertiesAnnotation().getDominantColors();
         for (ColorInfo color : colors.getColors()) {
             message.append(
-                    message.append(
-                            // color.getPixelFraction()+
-                            //    color.getColor().getRed()+ "GREEN"+
-                            // color.getColor().getGreen()+ "BLUE"+
-                            //  color.getColor().getBlue());
-                            "" + /*color.getPixelFraction() + " - " + */getColorNameFromRgb((int)Math.round(color.getColor().getRed()),(int)Math.round(color.getColor().getGreen()),(int)Math.round(color.getColor().getBlue())) +"\n"));
+                    "" +getColorNameFromRgb((int)Math.round(color.getColor().getRed()),(int)Math.round(color.getColor().getGreen()),(int)Math.round(color.getColor().getBlue())) +"\n");
         }
         return message.toString();
-    }
+    }// end tostring
     public Bitmap resizeBitmap(Bitmap bitmap) {
         int maxDimension = 1024;
         int originalWidth = bitmap.getWidth();
@@ -371,7 +352,8 @@ public class MainActivity extends AppCompatActivity {
             resizedHeight = maxDimension;
             resizedWidth = maxDimension;
         }
-        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false); }
+        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false);
+        }
     public Image getBase64EncodedJpeg(Bitmap bitmap) {
         Image image = new Image();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -384,7 +366,7 @@ public class MainActivity extends AppCompatActivity {
     public String getLabel(String []labels){
         String label="";
         for (int i=0;i<labels.length;i++) {
-            label= label+labels[i].toLowerCase();
+            label= labels[i].toLowerCase();
             for (int k = 0; k < excludeTextLabels.length; k++) {
                 if (label.equals(excludeTextLabels[k])) {
                     label="Written Text:";
