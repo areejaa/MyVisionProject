@@ -100,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
     private final String LOG_TAG = "MainActivity";
     private TextView resultTextView;
     private ImageView selectedImage;
+
+
     private static ArrayList<ColorName> initColorList() {
         ArrayList<ColorName> colorList = new ArrayList<ColorName>();
         colorList.add(new ColorName("Black", 0x00, 0x00, 0x00));/////
@@ -265,23 +267,42 @@ public class MainActivity extends AppCompatActivity {
          }//end callcloudvision
 
     private String convertResponseToString(BatchAnnotateImagesResponse response) {
-        StringBuilder message = new StringBuilder("Results:\n\n");
+        StringBuilder message = new StringBuilder("Results:\n");
+        StringBuilder TextOCR = new StringBuilder("");
+        StringBuilder TextfacialExpressions = new StringBuilder("");
+        StringBuilder Textlabel = new StringBuilder("");
+        StringBuilder Textcolors = new StringBuilder("");
+        StringBuilder logo1 = new StringBuilder();
+        String Logo ="",ocrtext="", from="";
 
-
-        message.append("Texts:\n");
-        List<EntityAnnotation> texts = response.getResponses().get(0)
-                .getTextAnnotations();
-        if (texts != null) {
-            for (EntityAnnotation text : texts) {
-                message.append(String.format(Locale.getDefault(), "%s: %s",
-                        text.getLocale(), text.getDescription()));
-                message.append("\n");}
+        String l1 ="";
+        List<EntityAnnotation> logos = response.getResponses().get(0)
+                .getLogoAnnotations();
+        if (logos != null) {
+            for (EntityAnnotation logo : logos) {
+                Logo = String.format(Locale.getDefault(), "%.3f: %s", logos.get(0).getLocale(), logo.getDescription());
+                Logo = Logo.substring(4);
+                logo1.append(Logo);
+            }
         } else {
-            message.append("nothing\n");
+            logo1.append("");
         }
+        // "Text"
+        List<EntityAnnotation> texts = response.getResponses().get(0).getTextAnnotations();
+        if (texts != null) {
+            ocrtext= texts.get(0).getDescription();
+            from=  texts.get(0).getLocale();
+            if (logos != null){
+                ocrtext = ocrtext + "from" + Logo + " company";
+            }
+            ocrtext.toLowerCase();
+            ocrtext=ocrtext.replaceAll("[\r\n]+", " ");
 
-        ///////FACE START
-        message.append("Faces:\n");
+            TextOCR.append(ocrtext); }
+            else {
+            TextOCR.append(""); }
+
+        //FACE START
         String person = "";
         int numberofpersons=0;
         List<FaceAnnotation> faces = response.getResponses().get(0)
@@ -303,14 +324,13 @@ public class MainActivity extends AppCompatActivity {
                 if (surprise.equals("VERY_LIKELY")||surprise.equals("LIKELY")||surprise.equals("POSSIBLE"))
                     person="a surprised person";
                 if (numberofpersons > 1 )
-                    message.append(" and \n"+person);
-                else message.append(person);
+                    TextfacialExpressions.append(" and \n"+person);
+                else TextfacialExpressions.append(person);
             }
-            message.append("\n");
+
         } else {
-            message.append("nothing\n");
+            message.append("");
         }
-        message.append("Labels:\n");
         List<EntityAnnotation> labels = response.getResponses().get(0).getLabelAnnotations();
         if (labels != null) {
             //this loop will add all labels received from vision API to receivedLabels array
@@ -320,19 +340,24 @@ public class MainActivity extends AppCompatActivity {
                 i++; }
             //send receivedLabels to getLabel method that will exclude some labels inorder to get accurate result
             if(faces==null)
-            { message.append(getLabel(receivedLabels));}
-            message.append("\n");
+            { Textlabel.append(getLabel(receivedLabels));}
         } else {
-            message.append("nothing\n"); }
+            Textlabel.append(""); }
 
 
         //colors
-        message.append("\n"+"COLORS:\n");
+       // message.append("\n"+"COLORS:\n");
         DominantColorsAnnotation colors  = response.getResponses().get(0).getImagePropertiesAnnotation().getDominantColors();
         for (ColorInfo color : colors.getColors()) {
-            message.append(
-                    "" +getColorNameFromRgb((int)Math.round(color.getColor().getRed()),(int)Math.round(color.getColor().getGreen()),(int)Math.round(color.getColor().getBlue())) +"\n");
-        }
+            Textcolors.append(
+                    "" +getColorNameFromRgb((int)Math.round(color.getColor().getRed()),(int)Math.round(color.getColor().getGreen()),(int)Math.round(color.getColor().getBlue())));
+            break;}
+
+        //HERE COMBINED RECEIVED STRING
+        message.append(Textcolors+" ");
+        message.append(Textlabel+" ");
+        message.append(TextfacialExpressions+" ");
+        message.append(TextOCR+" ");
         return message.toString();
     }// end tostring
     public Bitmap resizeBitmap(Bitmap bitmap) {
@@ -365,19 +390,16 @@ public class MainActivity extends AppCompatActivity {
 
     public String getLabel(String []labels){
         String label="";
-        for (int i=0;i<labels.length;i++) {
+        String firstLabel="";
+        firstLabel= labels[0].toLowerCase();
+        for (int i=0;i<3;i++) {
             label= labels[i].toLowerCase();
             for (int k = 0; k < excludeTextLabels.length; k++) {
                 if (label.equals(excludeTextLabels[k])) {
                     label="Written Text:";
-                    return label; }
-               /* else{
-                if(label.equals("furniture")){
-                 break;}// end if
-               }//end else*/
-            }// end for exclude
+                    return label; }}// end for exclude
         }// end for labels
-        return label;
+        return firstLabel;
     }//end method getLabels
     public static String getColorNameFromRgb(int r, int g, int b) {
         ArrayList<ColorName> colorList = initColorList();
